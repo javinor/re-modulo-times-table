@@ -1,8 +1,7 @@
-module Slider = {
+module SliderInt = {
   [@react.component]
-  let make = (~min, ~max, ~step=1.0, ~label, ~onChange) => {
-    let (value, setValue) =
-      React.useState(() => (min + int_of_string(max)) / 2);
+  let make = (~min, ~max, ~step=1, ~label, ~onChange) => {
+    let (value, setValue) = React.useState(() => (min + max) / 2);
 
     let timeoutRef = React.useRef(None);
 
@@ -35,14 +34,63 @@ module Slider = {
       <input
         type_="range"
         min
-        max
-        step
+        max={string_of_int(max)}
+        step={float_of_int(step)}
         value={string_of_int(value)}
         onChange=changeValue
       />
       <label>
         {ReasonReact.string(label)}
         {ReasonReact.string(string_of_int(value))}
+      </label>
+    </div>;
+  };
+};
+
+module SliderFloat = {
+  [@react.component]
+  let make = (~min, ~max, ~step, ~label, ~onChange) => {
+    let (value, setValue) = React.useState(() => (min +. max) /. 2.);
+
+    let timeoutRef = React.useRef(None);
+
+    let changeValue = e => {
+      switch (React.Ref.current(timeoutRef)) {
+      | None =>
+        let value = ReactEvent.Synthetic.target(e)##value;
+        let timeoutId =
+          Js.Global.setTimeout(
+            () => {
+              React.Ref.setCurrent(timeoutRef, None);
+              setValue(value);
+            },
+            10,
+          );
+        React.Ref.setCurrent(timeoutRef, Some(timeoutId));
+      | Some(_) => ()
+      };
+    };
+
+    React.useEffect1(
+      () => {
+        onChange(value);
+        None;
+      },
+      [|value|],
+    );
+
+    <div>
+      <input
+        type_="range"
+        min={int_of_float(min)}
+        max={Js.Float.toString(max)}
+        step
+        value={Js.Float.toString(value)}
+        onChange=changeValue
+      />
+      <label>
+        {ReasonReact.string(label)}
+        {ReasonReact.string(Js.Float.toString(value))}
       </label>
     </div>;
   };
@@ -110,7 +158,7 @@ let drawOnCanvas = (ctx, modulo, multiplier, width, height) => {
     let (fromX, fromY) =
       getNthPoint(width_float, height_float, radius, modulo, ii);
 
-    let to_index = ii * multiplier mod modulo;
+    let to_index = int_of_float(float_of_int(ii) *. multiplier) mod modulo;
     let (toX, toY) =
       getNthPoint(width_float, height_float, radius, modulo, to_index);
 
@@ -158,7 +206,7 @@ module App = {
   let make = () => {
     let ((width, height), setSize) = React.useState(getWindowSize);
     let (modulo, setModulo) = React.useState(() => 10);
-    let (multiplier, setMultiplier) = React.useState(() => 2);
+    let (multiplier, setMultiplier) = React.useState(() => 2.);
 
     React.useEffect(() => {
       let updateSize = _ => setSize(_ => getWindowSize());
@@ -171,15 +219,17 @@ module App = {
 
     <>
       <div>
-        <Slider
+        <SliderInt
           min=3
-          max="1200"
+          max=600
+          step=1
           label="modulo"
           onChange={newVal => setModulo(_ => newVal)}
         />
-        <Slider
-          min=2
-          max="500"
+        <SliderFloat
+          min=2.
+          max=20.
+          step=0.00001
           label="multiplier"
           onChange={newVal => setMultiplier(_ => newVal)}
         />

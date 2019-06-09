@@ -5,18 +5,17 @@ var Curry = require("bs-platform/lib/js/curry.js");
 var React = require("react");
 var Caml_int32 = require("bs-platform/lib/js/caml_int32.js");
 var ReactDOMRe = require("reason-react/src/ReactDOMRe.js");
-var Caml_format = require("bs-platform/lib/js/caml_format.js");
 var Caml_option = require("bs-platform/lib/js/caml_option.js");
 
-function Index$Slider(Props) {
+function Index$SliderInt(Props) {
   var min = Props.min;
   var max = Props.max;
   var match = Props.step;
-  var step = match !== undefined ? match : 1.0;
+  var step = match !== undefined ? match : 1;
   var label = Props.label;
   var onChange = Props.onChange;
   var match$1 = React.useState((function () {
-          return (min + Caml_format.caml_int_of_string(max) | 0) / 2 | 0;
+          return (min + max | 0) / 2 | 0;
         }));
   var setValue = match$1[1];
   var value = match$1[0];
@@ -40,7 +39,7 @@ function Index$Slider(Props) {
           return undefined;
         }), /* array */[value]);
   return React.createElement("div", undefined, React.createElement("input", {
-                  max: max,
+                  max: String(max),
                   min: min,
                   step: step,
                   type: "range",
@@ -49,7 +48,49 @@ function Index$Slider(Props) {
                 }), React.createElement("label", undefined, label, String(value)));
 }
 
-var Slider = /* module */[/* make */Index$Slider];
+var SliderInt = /* module */[/* make */Index$SliderInt];
+
+function Index$SliderFloat(Props) {
+  var min = Props.min;
+  var max = Props.max;
+  var step = Props.step;
+  var label = Props.label;
+  var onChange = Props.onChange;
+  var match = React.useState((function () {
+          return (min + max) / 2;
+        }));
+  var setValue = match[1];
+  var value = match[0];
+  var timeoutRef = React.useRef(undefined);
+  var changeValue = function (e) {
+    var match = timeoutRef.current;
+    if (match !== undefined) {
+      return /* () */0;
+    } else {
+      var value = e.target.value;
+      var timeoutId = setTimeout((function (param) {
+              timeoutRef.current = undefined;
+              return Curry._1(setValue, value);
+            }), 10);
+      timeoutRef.current = Caml_option.some(timeoutId);
+      return /* () */0;
+    }
+  };
+  React.useEffect((function () {
+          Curry._1(onChange, value);
+          return undefined;
+        }), /* array */[value]);
+  return React.createElement("div", undefined, React.createElement("input", {
+                  max: max.toString(),
+                  min: min | 0,
+                  step: step,
+                  type: "range",
+                  value: value.toString(),
+                  onChange: changeValue
+                }), React.createElement("label", undefined, label, value.toString()));
+}
+
+var SliderFloat = /* module */[/* make */Index$SliderFloat];
 
 var $$window = window;
 
@@ -79,7 +120,7 @@ function drawOnCanvas(ctx, modulo, multiplier, width, height) {
   ctx.beginPath();
   for(var ii = 0 ,ii_finish = modulo - 1 | 0; ii <= ii_finish; ++ii){
     var match = getNthPoint(width_float, height_float, radius, modulo, ii);
-    var to_index = Caml_int32.mod_(Caml_int32.imul(ii, multiplier), modulo);
+    var to_index = Caml_int32.mod_(ii * multiplier | 0, modulo);
     var match$1 = getNthPoint(width_float, height_float, radius, modulo, to_index);
     ctx.moveTo(match[0], match[1]);
     ctx.lineTo(match$1[0], match$1[1]);
@@ -150,18 +191,20 @@ function Index$App(Props) {
                     return /* () */0;
                   });
         }));
-  return React.createElement(React.Fragment, undefined, React.createElement("div", undefined, React.createElement(Index$Slider, {
+  return React.createElement(React.Fragment, undefined, React.createElement("div", undefined, React.createElement(Index$SliderInt, {
                       min: 3,
-                      max: "1200",
+                      max: 600,
+                      step: 1,
                       label: "modulo",
                       onChange: (function (newVal) {
                           return Curry._1(setModulo, (function (param) {
                                         return newVal;
                                       }));
                         })
-                    }), React.createElement(Index$Slider, {
+                    }), React.createElement(Index$SliderFloat, {
                       min: 2,
-                      max: "500",
+                      max: 20,
+                      step: 0.00001,
                       label: "multiplier",
                       onChange: (function (newVal) {
                           return Curry._1(setMultiplier, (function (param) {
@@ -183,7 +226,8 @@ var App = /* module */[
 
 ReactDOMRe.renderToElementWithId(React.createElement(Index$App, { }), "app");
 
-exports.Slider = Slider;
+exports.SliderInt = SliderInt;
+exports.SliderFloat = SliderFloat;
 exports.$$Document = $$Document;
 exports.Canvas = Canvas;
 exports.getNthPoint = getNthPoint;
