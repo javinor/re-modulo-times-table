@@ -117,56 +117,67 @@ function Index$ModuloTimesTable(Props) {
 
 var ModuloTimesTable = /* module */[/* make */Index$ModuloTimesTable];
 
-function logEvent(_event) {
-  console.log("app: clicked!", _event);
-  return /* () */0;
+function getWindowSize(param) {
+  return /* tuple */[
+          $$window.innerWidth,
+          $$window.innerHeight
+        ];
 }
-
-var height = $$window.innerHeight;
-
-var width = $$window.innerWidth;
 
 function Index$App(Props) {
   var match = React.useState((function () {
+          return getWindowSize(/* () */0);
+        }));
+  var setSize = match[1];
+  var match$1 = match[0];
+  var match$2 = React.useState((function () {
           return 10;
         }));
-  var setModulo = match[1];
-  var match$1 = React.useState((function () {
+  var setModulo = match$2[1];
+  var match$3 = React.useState((function () {
           return 2;
         }));
-  var setMultiplier = match$1[1];
-  var changeModulo = function (newModulo) {
-    return Curry._1(setModulo, (function (param) {
-                  return newModulo;
-                }));
-  };
-  var changeMultiplier = function (newMultiplier) {
-    return Curry._1(setMultiplier, (function (param) {
-                  return newMultiplier;
-                }));
-  };
+  var setMultiplier = match$3[1];
+  React.useEffect((function () {
+          var updateSize = function (param) {
+            return Curry._1(setSize, (function (param) {
+                          return getWindowSize(/* () */0);
+                        }));
+          };
+          $$window.addEventListener("resize", updateSize);
+          return (function (param) {
+                    $$window.removeEventListener("resize", updateSize);
+                    return /* () */0;
+                  });
+        }));
   return React.createElement(React.Fragment, undefined, React.createElement("div", undefined, React.createElement(Index$Slider, {
                       min: 3,
                       max: "1200",
                       label: "modulo",
-                      onChange: changeModulo
+                      onChange: (function (newVal) {
+                          return Curry._1(setModulo, (function (param) {
+                                        return newVal;
+                                      }));
+                        })
                     }), React.createElement(Index$Slider, {
                       min: 2,
                       max: "500",
                       label: "multiplier",
-                      onChange: changeMultiplier
+                      onChange: (function (newVal) {
+                          return Curry._1(setMultiplier, (function (param) {
+                                        return newVal;
+                                      }));
+                        })
                     })), React.createElement(Index$ModuloTimesTable, {
-                  modulo: match[0],
-                  multiplier: match$1[0],
-                  width: width,
-                  height: height
+                  modulo: match$2[0],
+                  multiplier: match$3[0],
+                  width: match$1[0],
+                  height: match$1[1]
                 }));
 }
 
 var App = /* module */[
-  /* logEvent */logEvent,
-  /* height */height,
-  /* width */width,
+  /* getWindowSize */getWindowSize,
   /* make */Index$App
 ];
 

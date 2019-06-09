@@ -49,20 +49,22 @@ module Slider = {
 };
 
 module Document = {
-  let window : Dom.element = [%bs.raw "window"];
+  let window: Dom.element = [%bs.raw "window"];
 
   [@bs.send]
-  external addEventListener : Dom.element => string => (Dom.event => unit) => unit = "addEventListener";
+  external addEventListener: (Dom.element, string, Dom.event => unit) => unit =
+    "addEventListener";
 
-  [@bs.get]
-  external getWidth : Dom.element => int = "innerWidth";
-  [@bs.get]
-  external getHeight : Dom.element => int = "innerHeight";
+  [@bs.send]
+  external removeEventListener:
+    (Dom.element, string, Dom.event => unit) => unit =
+    "removeEventListener";
 
-  [@bs.set]
-  external setWidth : Dom.element => int => unit = "width";
-  [@bs.set]
-  external setHeight : Dom.element => int => unit = "height";
+  [@bs.get] external getWidth: Dom.element => int = "innerWidth";
+  [@bs.get] external getHeight: Dom.element => int = "innerHeight";
+
+  [@bs.set] external setWidth: (Dom.element, int) => unit = "width";
+  [@bs.set] external setHeight: (Dom.element, int) => unit = "height";
 };
 
 module Canvas = {
@@ -71,28 +73,20 @@ module Canvas = {
   [@bs.send]
   external getContext: (Dom.element, string) => context = "getContext";
 
-  [@bs.send] external beginPath: context => unit = "beginPath";
-  [@bs.send] external moveTo: (context, float, float) => unit = "moveTo";
-  [@bs.send] external lineTo: (context, float, float) => unit = "lineTo";
-  [@bs.send] external closePath: context => unit = "closePath";
-
-  [@bs.send] external fill: context => unit = "fill";
-  [@bs.send] external stroke: context => unit = "stroke";
-
-  [@bs.send]
-  external fillRect: (context, float, float, float, float) => unit =
-    "fillRect";
   [@bs.send]
   external clearRect: (context, float, float, float, float) => unit =
     "clearRect";
-  [@bs.send]
-  external arc: (context, float, float, float, float, float, bool) => unit =
-    "arc";
+
+  [@bs.send] external beginPath: context => unit = "beginPath";
+  [@bs.send] external moveTo: (context, float, float) => unit = "moveTo";
+  [@bs.send] external lineTo: (context, float, float) => unit = "lineTo";
+  [@bs.send] external stroke: context => unit = "stroke";
+  [@bs.send] external closePath: context => unit = "closePath";
 };
 
 let getNthPoint = (width, height, radius, modulo, n) => {
   let n_float = float_of_int(n);
-  let modulo_float = float_of_int(modulo)
+  let modulo_float = float_of_int(modulo);
   let centerX = width /. 2.;
   let centerY = height /. 2.;
 
@@ -106,8 +100,9 @@ let getNthPoint = (width, height, radius, modulo, n) => {
 let drawOnCanvas = (ctx, modulo, multiplier, width, height) => {
   let width_float = float_of_int(width);
   let height_float = float_of_int(height);
-  let radius = 0.5 *. Js.Math.min_float(width_float *. 0.75, height_float *. 0.75);
-  
+  let radius =
+    0.5 *. Js.Math.min_float(width_float *. 0.75, height_float *. 0.75);
+
   Canvas.clearRect(ctx, 0., 0., width_float, height_float);
   Canvas.beginPath(ctx);
 
@@ -157,30 +152,39 @@ module ModuloTimesTable = {
 };
 
 module App = {
-  let logEvent = _event => Js.log2("app: clicked!", _event);
-
-  let height = Document.getHeight(Document.window);
-  let width = Document.getWidth(Document.window);
+  let getWindowSize = () => Document.(getWidth(window), getHeight(window));
 
   [@react.component]
   let make = () => {
+    let ((width, height), setSize) = React.useState(getWindowSize);
     let (modulo, setModulo) = React.useState(() => 10);
     let (multiplier, setMultiplier) = React.useState(() => 2);
 
-    let changeModulo = newModulo => {
-      setModulo(_ => newModulo);
-    };
-
-    let changeMultiplier = newMultiplier => {
-      setMultiplier(_ => newMultiplier);
-    };
+    React.useEffect(() => {
+      let updateSize = _ => setSize(_ => getWindowSize());
+      Document.addEventListener(Document.window, "resize", updateSize);
+      Some(
+        () =>
+          Document.removeEventListener(Document.window, "resize", updateSize),
+      );
+    });
 
     <>
       <div>
-        <Slider min=3 max="1200" label="modulo" onChange=changeModulo />
-        <Slider min=2 max="500" label="multiplier" onChange=changeMultiplier />
+        <Slider
+          min=3
+          max="1200"
+          label="modulo"
+          onChange={newVal => setModulo(_ => newVal)}
+        />
+        <Slider
+          min=2
+          max="500"
+          label="multiplier"
+          onChange={newVal => setMultiplier(_ => newVal)}
+        />
       </div>
-      <ModuloTimesTable modulo multiplier height width/>
+      <ModuloTimesTable modulo multiplier height width />
     </>;
   };
 };
