@@ -3,25 +3,10 @@
 
 var Curry = require("bs-platform/lib/js/curry.js");
 var React = require("react");
+var Caml_int32 = require("bs-platform/lib/js/caml_int32.js");
 var ReactDOMRe = require("reason-react/src/ReactDOMRe.js");
 var Caml_format = require("bs-platform/lib/js/caml_format.js");
 var Caml_option = require("bs-platform/lib/js/caml_option.js");
-
-function debounce(f, ms) {
-  var timerId = /* record */[/* contents */undefined];
-  return (function (ev) {
-      var match = timerId[0];
-      if (match !== undefined) {
-        return /* () */0;
-      } else {
-        var value = ev.target.value;
-        timerId[0] = Caml_option.some(setTimeout((function (param) {
-                    return Curry._1(f, value);
-                  }), ms));
-        return /* () */0;
-      }
-    });
-}
 
 function Index$Slider(Props) {
   var min = Props.min;
@@ -66,39 +51,132 @@ function Index$Slider(Props) {
 
 var Slider = /* module */[/* make */Index$Slider];
 
-function logEvent(_event) {
-  console.log("clicked!", _event);
+var $$window = window;
+
+var $$Document = /* module */[/* window */$$window];
+
+var Canvas = /* module */[];
+
+function getNthPoint(width, height, radius, modulo, n) {
+  var n_float = n;
+  var modulo_float = modulo;
+  var centerX = width / 2;
+  var centerY = height / 2;
+  var pi = Math.PI;
+  var dx = radius * Math.cos(2 * pi * n_float / modulo_float);
+  var dy = radius * Math.sin(2 * pi * n_float / modulo_float);
+  return /* tuple */[
+          centerX + dx,
+          centerY + dy
+        ];
+}
+
+function drawOnCanvas(ctx, modulo, multiplier, width, height) {
+  var width_float = width;
+  var height_float = height;
+  var radius = 0.5 * Math.min(width_float * 0.75, height_float * 0.75);
+  ctx.clearRect(0, 0, width_float, height_float);
+  ctx.beginPath();
+  for(var ii = 0 ,ii_finish = modulo - 1 | 0; ii <= ii_finish; ++ii){
+    var match = getNthPoint(width_float, height_float, radius, modulo, ii);
+    var to_index = Caml_int32.mod_(Caml_int32.imul(ii, multiplier), modulo);
+    var match$1 = getNthPoint(width_float, height_float, radius, modulo, to_index);
+    ctx.moveTo(match[0], match[1]);
+    ctx.lineTo(match$1[0], match$1[1]);
+  }
+  ctx.stroke();
+  ctx.closePath();
   return /* () */0;
 }
 
+function Index$ModuloTimesTable(Props) {
+  var modulo = Props.modulo;
+  var multiplier = Props.multiplier;
+  var width = Props.width;
+  var height = Props.height;
+  var canvasRef = React.useRef(null);
+  React.useEffect((function (param) {
+          var canvas = canvasRef.current;
+          if (!(canvas == null)) {
+            canvas.width = width;
+            canvas.height = height;
+            var ctx = canvas.getContext("2d");
+            drawOnCanvas(ctx, modulo, multiplier, width, height);
+          }
+          return undefined;
+        }), /* tuple */[
+        modulo,
+        multiplier,
+        width,
+        height
+      ]);
+  return React.createElement("canvas", {
+              ref: canvasRef
+            }, "Canvas not supported!?");
+}
+
+var ModuloTimesTable = /* module */[/* make */Index$ModuloTimesTable];
+
+function logEvent(_event) {
+  console.log("app: clicked!", _event);
+  return /* () */0;
+}
+
+var height = $$window.innerHeight;
+
+var width = $$window.innerWidth;
+
 function Index$App(Props) {
-  Props.message;
+  var match = React.useState((function () {
+          return 10;
+        }));
+  var setModulo = match[1];
+  var match$1 = React.useState((function () {
+          return 2;
+        }));
+  var setMultiplier = match$1[1];
+  var changeModulo = function (newModulo) {
+    return Curry._1(setModulo, (function (param) {
+                  return newModulo;
+                }));
+  };
+  var changeMultiplier = function (newMultiplier) {
+    return Curry._1(setMultiplier, (function (param) {
+                  return newMultiplier;
+                }));
+  };
   return React.createElement(React.Fragment, undefined, React.createElement("div", undefined, React.createElement(Index$Slider, {
                       min: 3,
                       max: "1200",
                       label: "modulo",
-                      onChange: logEvent
+                      onChange: changeModulo
                     }), React.createElement(Index$Slider, {
                       min: 2,
-                      max: "1003",
-                      step: 0.002,
+                      max: "500",
                       label: "multiplier",
-                      onChange: logEvent
-                    })), React.createElement("canvas", {
-                  id: "canvas"
-                }, "Canvas not supported!?"));
+                      onChange: changeMultiplier
+                    })), React.createElement(Index$ModuloTimesTable, {
+                  modulo: match[0],
+                  multiplier: match$1[0],
+                  width: width,
+                  height: height
+                }));
 }
 
 var App = /* module */[
   /* logEvent */logEvent,
+  /* height */height,
+  /* width */width,
   /* make */Index$App
 ];
 
-ReactDOMRe.renderToElementWithId(React.createElement(Index$App, {
-          message: "Hello! Click this text."
-        }), "app");
+ReactDOMRe.renderToElementWithId(React.createElement(Index$App, { }), "app");
 
-exports.debounce = debounce;
 exports.Slider = Slider;
+exports.$$Document = $$Document;
+exports.Canvas = Canvas;
+exports.getNthPoint = getNthPoint;
+exports.drawOnCanvas = drawOnCanvas;
+exports.ModuloTimesTable = ModuloTimesTable;
 exports.App = App;
-/*  Not a pure module */
+/* window Not a pure module */
