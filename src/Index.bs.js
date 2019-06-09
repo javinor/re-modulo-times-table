@@ -5,92 +5,42 @@ var Curry = require("bs-platform/lib/js/curry.js");
 var React = require("react");
 var Caml_int32 = require("bs-platform/lib/js/caml_int32.js");
 var ReactDOMRe = require("reason-react/src/ReactDOMRe.js");
+var Caml_format = require("bs-platform/lib/js/caml_format.js");
 var Caml_option = require("bs-platform/lib/js/caml_option.js");
 
-function Index$SliderInt(Props) {
-  var min = Props.min;
-  var max = Props.max;
-  var match = Props.step;
-  var step = match !== undefined ? match : 1;
-  var label = Props.label;
-  var onChange = Props.onChange;
-  var match$1 = React.useState((function () {
-          return (min + max | 0) / 2 | 0;
-        }));
-  var setValue = match$1[1];
-  var value = match$1[0];
-  var timeoutRef = React.useRef(undefined);
-  var changeValue = function (e) {
-    var match = timeoutRef.current;
-    if (match !== undefined) {
-      return /* () */0;
-    } else {
-      var value = e.target.value;
-      var timeoutId = setTimeout((function (param) {
-              timeoutRef.current = undefined;
-              return Curry._1(setValue, value);
-            }), 10);
-      timeoutRef.current = Caml_option.some(timeoutId);
-      return /* () */0;
-    }
-  };
-  React.useEffect((function () {
-          Curry._1(onChange, value);
-          return undefined;
-        }), /* array */[value]);
-  return React.createElement("div", undefined, React.createElement("input", {
-                  max: String(max),
-                  min: min,
-                  step: step,
-                  type: "range",
-                  value: String(value),
-                  onChange: changeValue
-                }), React.createElement("label", undefined, label + (" " + String(value))));
-}
-
-var SliderInt = /* module */[/* make */Index$SliderInt];
-
-function Index$SliderFloat(Props) {
+function Index$DebouncedSlider(Props) {
   var min = Props.min;
   var max = Props.max;
   var step = Props.step;
   var label = Props.label;
+  var value = Props.value;
   var onChange = Props.onChange;
-  var match = React.useState((function () {
-          return (min + max) / 2;
-        }));
-  var setValue = match[1];
-  var value = match[0];
   var timeoutRef = React.useRef(undefined);
   var changeValue = function (e) {
     var match = timeoutRef.current;
     if (match !== undefined) {
       return /* () */0;
     } else {
-      var value = e.target.value;
+      var value = String(e.target.value);
       var timeoutId = setTimeout((function (param) {
               timeoutRef.current = undefined;
-              return Curry._1(setValue, value);
+              return Curry._1(onChange, value);
             }), 10);
       timeoutRef.current = Caml_option.some(timeoutId);
       return /* () */0;
     }
   };
-  React.useEffect((function () {
-          Curry._1(onChange, value);
-          return undefined;
-        }), /* array */[value]);
   return React.createElement("div", undefined, React.createElement("input", {
-                  max: max.toString(),
-                  min: min | 0,
+                  max: max,
+                  min: min,
                   step: step,
                   type: "range",
-                  value: value.toString(),
+                  value: value,
                   onChange: changeValue
-                }), React.createElement("label", undefined, label + (" " + value.toString())));
+                }), React.createElement("label", undefined, label + (" " + value)));
 }
 
-var SliderFloat = /* module */[/* make */Index$SliderFloat];
+var DebouncedSlider = /* module */[/* make */Index$DebouncedSlider];
 
 var $$window = window;
 
@@ -167,18 +117,25 @@ function getWindowSize(param) {
 
 function Index$App(Props) {
   var match = React.useState((function () {
+          return undefined;
+        }));
+  var setFrameId = match[1];
+  var frameId = match[0];
+  var match$1 = React.useState((function () {
           return getWindowSize(/* () */0);
         }));
-  var setSize = match[1];
-  var match$1 = match[0];
-  var match$2 = React.useState((function () {
-          return 10;
-        }));
-  var setModulo = match$2[1];
+  var setSize = match$1[1];
+  var match$2 = match$1[0];
   var match$3 = React.useState((function () {
+          return 571;
+        }));
+  var setModulo = match$3[1];
+  var modulo = match$3[0];
+  var match$4 = React.useState((function () {
           return 2;
         }));
-  var setMultiplier = match$3[1];
+  var setMultiplier = match$4[1];
+  var multiplier = match$4[0];
   React.useEffect((function () {
           var updateSize = function (param) {
             return Curry._1(setSize, (function (param) {
@@ -191,45 +148,70 @@ function Index$App(Props) {
                     return /* () */0;
                   });
         }));
+  React.useEffect((function () {
+          if (frameId === undefined) {
+            var animationFrameId = requestAnimationFrame((function (param) {
+                    Curry._1(setMultiplier, (function (mult) {
+                            var match = mult >= 20;
+                            if (match) {
+                              return 2;
+                            } else {
+                              return mult + 0.01;
+                            }
+                          }));
+                    return Curry._1(setFrameId, (function (param) {
+                                  return undefined;
+                                }));
+                  }));
+            Curry._1(setFrameId, (function (param) {
+                    return Caml_option.some(animationFrameId);
+                  }));
+          }
+          return undefined;
+        }));
   return React.createElement(React.Fragment, undefined, React.createElement("div", {
                   className: "controls"
-                }, React.createElement(Index$SliderInt, {
+                }, React.createElement(Index$DebouncedSlider, {
                       min: 3,
-                      max: 600,
+                      max: "600",
                       step: 1,
                       label: "modulo",
+                      value: String(modulo),
                       onChange: (function (newVal) {
                           return Curry._1(setModulo, (function (param) {
-                                        return newVal;
+                                        return Caml_format.caml_int_of_string(newVal);
                                       }));
                         })
-                    }), React.createElement(Index$SliderFloat, {
+                    }), React.createElement(Index$DebouncedSlider, {
                       min: 2,
-                      max: 20,
-                      step: 0.00001,
+                      max: (20).toString(),
+                      step: 0.01,
                       label: "multiplier",
+                      value: multiplier.toFixed(3),
                       onChange: (function (newVal) {
                           return Curry._1(setMultiplier, (function (param) {
-                                        return newVal;
+                                        return Caml_format.caml_float_of_string(newVal);
                                       }));
                         })
                     })), React.createElement(Index$ModuloTimesTable, {
-                  modulo: match$2[0],
-                  multiplier: match$3[0],
-                  width: match$1[0],
-                  height: match$1[1]
+                  modulo: modulo,
+                  multiplier: multiplier,
+                  width: match$2[0],
+                  height: match$2[1]
                 }));
 }
 
 var App = /* module */[
   /* getWindowSize */getWindowSize,
+  /* multiplierMin */2,
+  /* multiplierMax */20,
+  /* multiplierStep */0.01,
   /* make */Index$App
 ];
 
 ReactDOMRe.renderToElementWithId(React.createElement(Index$App, { }), "app");
 
-exports.SliderInt = SliderInt;
-exports.SliderFloat = SliderFloat;
+exports.DebouncedSlider = DebouncedSlider;
 exports.$$Document = $$Document;
 exports.Canvas = Canvas;
 exports.getNthPoint = getNthPoint;

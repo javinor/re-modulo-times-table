@@ -1,19 +1,17 @@
-module SliderInt = {
+module DebouncedSlider = {
   [@react.component]
-  let make = (~min, ~max, ~step=1, ~label, ~onChange) => {
-    let (value, setValue) = React.useState(() => (min + max) / 2);
-
+  let make = (~min, ~max, ~step, ~label, ~value, ~onChange) => {
     let timeoutRef = React.useRef(None);
 
     let changeValue = e => {
       switch (React.Ref.current(timeoutRef)) {
       | None =>
-        let value = ReactEvent.Synthetic.target(e)##value;
+        let value = Js.String.make(ReactEvent.Synthetic.target(e)##value);
         let timeoutId =
           Js.Global.setTimeout(
             () => {
               React.Ref.setCurrent(timeoutRef, None);
-              setValue(value);
+              onChange(value);
             },
             10,
           );
@@ -22,74 +20,9 @@ module SliderInt = {
       };
     };
 
-    React.useEffect1(
-      () => {
-        onChange(value);
-        None;
-      },
-      [|value|],
-    );
-
     <div>
-      <input
-        type_="range"
-        min
-        max={string_of_int(max)}
-        step={float_of_int(step)}
-        value={string_of_int(value)}
-        onChange=changeValue
-      />
-      <label>
-        {ReasonReact.string(label ++ " " ++ string_of_int(value))}
-      </label>
-    </div>;
-  };
-};
-
-module SliderFloat = {
-  [@react.component]
-  let make = (~min, ~max, ~step, ~label, ~onChange) => {
-    let (value, setValue) = React.useState(() => (min +. max) /. 2.);
-
-    let timeoutRef = React.useRef(None);
-
-    let changeValue = e => {
-      switch (React.Ref.current(timeoutRef)) {
-      | None =>
-        let value = ReactEvent.Synthetic.target(e)##value;
-        let timeoutId =
-          Js.Global.setTimeout(
-            () => {
-              React.Ref.setCurrent(timeoutRef, None);
-              setValue(value);
-            },
-            10,
-          );
-        React.Ref.setCurrent(timeoutRef, Some(timeoutId));
-      | Some(_) => ()
-      };
-    };
-
-    React.useEffect1(
-      () => {
-        onChange(value);
-        None;
-      },
-      [|value|],
-    );
-
-    <div>
-      <input
-        type_="range"
-        min={int_of_float(min)}
-        max={Js.Float.toString(max)}
-        step
-        value={Js.Float.toString(value)}
-        onChange=changeValue
-      />
-      <label>
-        {ReasonReact.string(label ++ " " ++ Js.Float.toString(value))}
-      </label>
+      <input type_="range" min max step value onChange=changeValue />
+      <label> {ReasonReact.string(label ++ " " ++ value)} </label>
     </div>;
   };
 };
@@ -105,6 +38,11 @@ module Document = {
   external removeEventListener:
     (Dom.element, string, Dom.event => unit) => unit =
     "removeEventListener";
+
+  type animationFrameID;
+  [@bs.val]
+  external requestAnimationFrame: (unit => unit) => animationFrameID = "";
+  [@bs.val] external cancelAnimationFrame: animationFrameID => unit = "";
 
   [@bs.get] external getWidth: Dom.element => int = "innerWidth";
   [@bs.get] external getHeight: Dom.element => int = "innerHeight";
@@ -200,36 +138,59 @@ module ModuloTimesTable = {
 module App = {
   let getWindowSize = () => Document.(getWidth(window), getHeight(window));
 
+  let multiplierMin = 2.;
+  let multiplierMax = 20.;
+  let multiplierStep = 0.01;
+
   [@react.component]
   let make = () => {
+    let (frameId, setFrameId) = React.useState(() => None);
     let ((width, height), setSize) = React.useState(getWindowSize);
-    let (modulo, setModulo) = React.useState(() => 10);
+    let (modulo, setModulo) = React.useState(() => 571);
     let (multiplier, setMultiplier) = React.useState(() => 2.);
 
     React.useEffect(() => {
       let updateSize = _ => setSize(_ => getWindowSize());
-      Document.addEventListener(Document.window, "resize", updateSize);
+      Document.(addEventListener(window, "resize", updateSize));
       Some(
-        () =>
-          Document.removeEventListener(Document.window, "resize", updateSize),
+        () => Document.(removeEventListener(window, "resize", updateSize)),
       );
+    });
+
+    React.useEffect(() => {
+      switch (frameId) {
+      | None =>
+        let animationFrameId =
+          Document.requestAnimationFrame(() => {
+            setMultiplier(mult =>
+              mult >= multiplierMax ? multiplierMin : mult +. multiplierStep
+            );
+            setFrameId(_ => None);
+          });
+        setFrameId(_ => Some(animationFrameId));
+      | Some(_) => ()
+      };
+
+      None;
     });
 
     <>
       <div className="controls">
-        <SliderInt
+        <DebouncedSlider
           min=3
-          max=600
-          step=1
+          max="600"
+          step=1.
+          value={string_of_int(modulo)}
           label="modulo"
-          onChange={newVal => setModulo(_ => newVal)}
+          onChange={newVal => setModulo(_ => int_of_string(newVal))}
         />
-        <SliderFloat
-          min=2.
-          max=20.
-          step=0.00001
+        <DebouncedSlider
+          min={int_of_float(multiplierMin)}
+          max={Js.Float.toString(multiplierMax)}
+          step=multiplierStep
           label="multiplier"
-          onChange={newVal => setMultiplier(_ => newVal)}
+          value={Js.Float.toFixedWithPrecision(~digits=3, multiplier)}
+          onChange={newVal => setMultiplier(_ => float_of_string(newVal))}
         />
       </div>
       <ModuloTimesTable modulo multiplier height width />
