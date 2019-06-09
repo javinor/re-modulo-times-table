@@ -40,8 +40,7 @@ module SliderInt = {
         onChange=changeValue
       />
       <label>
-        {ReasonReact.string(label)}
-        {ReasonReact.string(string_of_int(value))}
+        {ReasonReact.string(label ++ " " ++ string_of_int(value))}
       </label>
     </div>;
   };
@@ -89,8 +88,7 @@ module SliderFloat = {
         onChange=changeValue
       />
       <label>
-        {ReasonReact.string(label)}
-        {ReasonReact.string(Js.Float.toString(value))}
+        {ReasonReact.string(label ++ " " ++ Js.Float.toString(value))}
       </label>
     </div>;
   };
@@ -218,7 +216,7 @@ module App = {
     });
 
     <>
-      <div>
+      <div className="controls">
         <SliderInt
           min=3
           max=600

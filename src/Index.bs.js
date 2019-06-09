@@ -45,7 +45,7 @@ function Index$SliderInt(Props) {
                   type: "range",
                   value: String(value),
                   onChange: changeValue
-                }), React.createElement("label", undefined, label, String(value)));
+                }), React.createElement("label", undefined, label + (" " + String(value))));
 }
 
 var SliderInt = /* module */[/* make */Index$SliderInt];
@@ -87,7 +87,7 @@ function Index$SliderFloat(Props) {
                   type: "range",
                   value: value.toString(),
                   onChange: changeValue
-                }), React.createElement("label", undefined, label, value.toString()));
+                }), React.createElement("label", undefined, label + (" " + value.toString())));
 }
 
 var SliderFloat = /* module */[/* make */Index$SliderFloat];
@@ -191,7 +191,9 @@ function Index$App(Props) {
                     return /* () */0;
                   });
         }));
-  return React.createElement(React.Fragment, undefined, React.createElement("div", undefined, React.createElement(Index$SliderInt, {
+  return React.createElement(React.Fragment, undefined, React.createElement("div", {
+                  className: "controls"
+                }, React.createElement(Index$SliderInt, {
                       min: 3,
                       max: 600,
                       step: 1,
